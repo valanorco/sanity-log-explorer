@@ -104,17 +104,57 @@ make audit-backend
 
 ## Troubleshooting
 
-1. UI unavailable:
-1. Run `docker compose ps`
-2. Check port `4321`
+### UI unavailable
 
-2. Transform failure:
+1. Check container status: `docker compose ps`
+2. Check frontend logs: `docker compose logs frontend`
+3. Confirm port `4321` is free on host
+4. Open backend health URL and verify it responds: `http://localhost:8000/health`
+
+### Upload or ingest fails
+
+1. Verify backend is reachable: `curl http://localhost:8000/health`
+2. Check backend logs for ingest errors: `docker compose logs backend`
+3. Confirm file is NDJSON/JSONL with one JSON object per line
+4. Run clear data in the UI and retry upload
+
+### Transform failure
+
 1. Confirm backend health endpoint responds
-2. Check logs: `docker compose logs backend`
+2. Check dbt/transform output in backend logs: `docker compose logs backend`
+3. Re-run Transform for the same session from the UI
+4. If needed, clear data and ingest again
 
-3. Empty query results:
-1. Ensure transform completed
-2. Reset filters and query again
+### Query returns no rows
+
+1. Ensure transform completed with status `ready`
+2. Reset filters and run query again
+3. Verify selected session is the expected file/session
+4. Use schema endpoint to verify dimensions exist for that file: `GET /schema/{file_id}`
+
+### Chart/anomaly output looks wrong
+
+1. Run Query again before Analyze
+2. Verify anomaly controls/preset are not overly strict
+3. Increase query coverage by keeping filters broad first, then narrow down
+4. Re-run Analyze after changing controls
+
+### Clear data does not reset everything
+
+1. Use the UI Clear Data button and confirm deletion
+2. Verify sessions endpoint returns empty or reduced list: `GET /ingest/sessions`
+3. Check `data/uploads` and `data/staging` folders are cleared except `.gitkeep`
+
+### Port conflicts
+
+1. Change ports in `.env` (`FRONTEND_PORT`, `BACKEND_PORT`) and restart
+2. Restart stack: `docker compose down && docker compose up -d --build`
+
+### Release workflow did not create a release
+
+1. Ensure commit messages follow Conventional Commits
+2. Check Actions tab for `Release` workflow status
+3. Verify branch is `main` (or PR targets `main`)
 
 ## License
 
