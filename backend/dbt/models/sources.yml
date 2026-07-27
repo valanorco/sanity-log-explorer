@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    tables:
+      - name: raw_logs
+
+models:
+  - name: stg_logs
+    columns:
+      - name: event_id
+        tests: [not_null]
+      - name: file_id
+        tests: [not_null]

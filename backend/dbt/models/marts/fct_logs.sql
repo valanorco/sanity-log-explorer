@@ -1,0 +1,19 @@
+select
+  event_id,
+  file_id,
+  timestamp,
+  request_url,
+  request_method,
+  request_label,
+  request_size_bytes,
+  response_size_bytes,
+  response_status,
+  response_time_ms,
+  ip_address,
+  response_bucket,
+  hour_bucket,
+  partition_date,
+  partition_domain,
+  partition_request,
+  partition_endpoint
+from {{ ref('int_logs_enriched') }}

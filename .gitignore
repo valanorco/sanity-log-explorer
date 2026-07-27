@@ -1,0 +1,89 @@
+# ------------------------------
+# OS / Editor
+# ------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+
+# Keep workspace settings out unless explicitly curated.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# ------------------------------
+# Environment / Secrets
+# ------------------------------
+.env
+.env.local
+.env.*.local
+
+# ------------------------------
+# Logs
+# ------------------------------
+*.log
+*.out
+*.err
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ------------------------------
+# Python
+# ------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+backend/.venv/
+
+# Build / packaging
+build/
+site/
+.eggs/
+*.egg-info/
+pip-wheel-metadata/
+
+# ------------------------------
+# Node / Frontend
+# ------------------------------
+node_modules/
+frontend/node_modules/
+frontend/.pnpm-store/
+.pnpm-store/
+
+# Astro / frontend build outputs
+.astro/
+dist/
+frontend/dist/
+
+# ------------------------------
+# dbt / analytics artifacts
+# ------------------------------
+backend/dbt/target/
+backend/dbt/logs/
+backend/dbt/dbt_packages/
+
+# ------------------------------
+# Local data artifacts
+# ------------------------------
+data/duckdb.db
+data/uploads/*
+data/staging/*
+
+# Keep placeholder files when directories are tracked
+!data/uploads/.gitkeep
+!data/staging/.gitkeep

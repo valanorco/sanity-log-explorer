@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Avoid creating releases for PRs coming from forks (token does not have write access).
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect releasable conventional commits
+        id: gate
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          elif [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          else
+            RANGE="HEAD~50..HEAD"
+          fi
+
+          COMMITS=$(git log --format=%B "$RANGE" 2>/dev/null || git log --format=%B -n 50)
+
+          if echo "$COMMITS" | grep -Eiq '(^feat(\(.+\))?:|^fix(\(.+\))?:|^perf(\(.+\))?:|^refactor(\(.+\))?:|^[a-z]+(\(.+\))?!:|BREAKING CHANGE:)'; then
+            echo "releasable=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "releasable=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Calculate semantic version
+        if: steps.gate.outputs.releasable == 'true'
+        id: semver
+        uses: PaulHatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "^(feat|fix|perf|refactor|chore|docs|test|ci|build|style)(\\(.+\\))?!:|BREAKING CHANGE:"
+          minor_pattern: "^feat(\\(.+\\))?:"
+          search_commit_body: true
+
+      - name: Stop when no releasable semantic commit is detected
+        if: steps.gate.outputs.releasable != 'true' || steps.semver.outputs.changed != 'true'
+        run: |
+          echo "No releasable semantic commit found."
+          echo "Expected Conventional Commits, e.g. feat:, fix:, perf:, refactor:, or !/BREAKING CHANGE."
+
+      - name: Prepare release metadata
+        if: steps.gate.outputs.releasable == 'true' && steps.semver.outputs.changed == 'true'
+        id: meta
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "tag=pr-${{ github.event.pull_request.number }}-v${{ steps.semver.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "name=PR #${{ github.event.pull_request.number }} Preview v${{ steps.semver.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v${{ steps.semver.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "name=v${{ steps.semver.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update GitHub release
+        if: steps.gate.outputs.releasable == 'true' && steps.semver.outputs.changed == 'true'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.name }}
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          generateReleaseNotes: true
+          allowUpdates: true
+          omitBodyDuringUpdate: false

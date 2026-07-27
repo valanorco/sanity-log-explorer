@@ -1,0 +1,39 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      DUCKDB_PATH: ${DUCKDB_PATH:-/data/duckdb.db}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+      STAGING_DIR: ${STAGING_DIR:-/data/staging}
+      DBT_PROJECT_DIR: ${DBT_PROJECT_DIR:-/app/backend/dbt}
+      DBT_PROFILES_DIR: ${DBT_PROFILES_DIR:-/app/backend/dbt}
+      MAX_ROWS_PER_CHUNK: ${MAX_ROWS_PER_CHUNK:-50000}
+    volumes:
+      - ./backend:/app/backend
+      - ./data:/data
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        NODE_ENV: development
+    ports:
+      - "${FRONTEND_PORT:-4321}:4321"
+    environment:
+      PUBLIC_API_BASE: http://backend:8000
+      NODE_ENV: development
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+    command: sh -c "corepack enable && corepack prepare pnpm@10.34.5 --activate && pnpm install --frozen-lockfile && (pnpm exec astro dev stop >/dev/null 2>&1 || true) && pnpm exec astro dev --host 0.0.0.0 --port 4321"
+    depends_on:
+      - backend
+
+volumes:
+  frontend_node_modules:

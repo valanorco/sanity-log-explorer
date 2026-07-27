@@ -1,0 +1,8 @@
+sanity_log_explorer:
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '/data/duckdb.db') }}"
+      schema: main
+      threads: 4
+  target: dev

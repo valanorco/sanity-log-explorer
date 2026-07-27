@@ -1,0 +1,19 @@
+name: sanity_log_explorer
+version: 1.0.0
+config-version: 2
+
+profile: sanity_log_explorer
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+models:
+  sanity_log_explorer:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table
